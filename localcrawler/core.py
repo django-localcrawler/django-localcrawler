@@ -1,14 +1,18 @@
 from BeautifulSoup import BeautifulSoup
+from django.conf import settings
 from django.test.client import Client
 import sys
 
 __all__ = ['Crawler']
 
 class Crawler(object):
-    def __init__(self, entry_point='/', media=True, css=True, js=True,
-                 bad_soup=True, client=None, output=sys.stderr):
+    def __init__(self, entry_point='/', media=True,
+                 css=True, js=True, bad_soup=True,
+                 client=None, ignore=None,
+                 output=sys.stderr):
+        
         self.queue = [entry_point]
-        self.ignore = []
+        self.ignore = ignore or []
         self.media = media
         self.css = css
         self.js = js
@@ -82,4 +86,9 @@ class Crawler(object):
                 self.queue.append(href)
         
     def _relevant(self, url):
-        return url and url.startswith('/') and url not in self.ignore
+        conditions = [
+            url,
+            url.startswith('/'),
+            not url in self.ignore,
+        ]
+        return all(conditions)
