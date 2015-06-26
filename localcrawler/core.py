@@ -72,12 +72,12 @@ class Crawler(object):
                     self.queue.append(src)
         if self.js:
             for js in soup.findAll('script', attrs={'type': 'text/javascript'}):
-                src = js.get('src', None)
+                src = js.get('src', '')
                 if self._relevant(src):
                     self.queue.append(src)
         if self.css:
             for css in soup.findAll('link', attrs={'type': 'text/css'}):
-                href = css.get('href', None)
+                href = css.get('href', '')
                 if self._relevant(href):
                     self.queue.append(href)
         for a in soup.findAll('a'):
