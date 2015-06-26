@@ -6,14 +6,19 @@ import sys
 __all__ = ['Crawler']
 
 class Crawler(object):
-    def __init__(self, entry_point='/', media=True,
+    def __init__(self, entry_point='/', img=True,
+                 media=True,  # Deprecated: Use img
+                 media_dir=True, static_dir=True,
                  css=True, js=True, bad_soup=True,
                  client=None, ignore=None,
                  output=sys.stderr):
         
         self.queue = [entry_point]
         self.ignore = ignore or []
-        self.media = media
+        self.img = img
+        self.media = img  # Deprecated: use img
+        self.media_dir = media_dir
+        self.static_dir = static_dir
         self.css = css
         self.js = js
         self.bad_soup = bad_soup
@@ -65,7 +70,7 @@ class Crawler(object):
                 self.success = False
                 self.report("SOUP", url, unicode(e))
             return
-        if self.media:
+        if self.img and self.media:
             for img in soup.findAll('img'):
                 src = img.get('src', '')
                 if self._relevant(src):
@@ -86,9 +91,13 @@ class Crawler(object):
                 self.queue.append(href)
         
     def _relevant(self, url):
-        conditions = (
+        conditions = [
             url,
             url.startswith('/'),
             not url in self.ignore,
-        )
+        ]
+        if not self.media_dir:
+            conditions.append(not url.startswith(settings.MEDIA_URL))
+        if not self.static_dir:
+            conditions.append(not url.startswith(settings.STATIC_URL))
         return all(conditions)
