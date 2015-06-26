@@ -67,7 +67,7 @@ class Crawler(object):
             return
         if self.media:
             for img in soup.findAll('img'):
-                src = img.get('src', None)
+                src = img.get('src', '')
                 if self._relevant(src):
                     self.queue.append(src)
         if self.js:
@@ -81,14 +81,14 @@ class Crawler(object):
                 if self._relevant(href):
                     self.queue.append(href)
         for a in soup.findAll('a'):
-            href = a.get('href', None)
+            href = a.get('href', '')
             if self._relevant(href):
                 self.queue.append(href)
         
     def _relevant(self, url):
-        conditions = [
+        conditions = (
             url,
             url.startswith('/'),
             not url in self.ignore,
-        ]
+        )
         return all(conditions)
