@@ -1,6 +1,6 @@
 *.pyc
 *~
-.*
+.coveragerc
 dist
 build
 *egg-info*
