@@ -6,26 +6,26 @@ import sys
 __all__ = ['Crawler']
 
 class Crawler(object):
-    def __init__(self, entry_point='/', img=True,
-                 media=True,  # Deprecated: Use img
-                 media_dir=True, static_dir=True,
-                 css=True, js=True, bad_soup=True,
-                 client=None, ignore=None,
+    def __init__(self, entry_point='/',
+                 img=True, media=True,  # Media is deprecated: Use img
+                 media_dir=True, static_dir=True, css=True, js=True,
+                 bad_soup=True, client=None, ignore=None,
+                 return_results=False, return_response=False,
                  output=sys.stderr):
         
+        self.results = None
         self.queue = [entry_point]
         self.ignore = ignore or []
         self.img = img
-        self.media = img  # Deprecated: use img
+        self.media = img  # Deprecated. Use img
         self.media_dir = media_dir
         self.static_dir = static_dir
         self.css = css
         self.js = js
         self.bad_soup = bad_soup
-        if client:
-            self.client = client
-        else:
-            self.client = Client()
+        self.return_results = return_results
+        self.return_response = return_response
+        self.client = client or Client()
         self.output = output
         self.success = True
         self.crawled = 0
@@ -33,6 +33,7 @@ class Crawler(object):
         self.succeeded = 0
         
     def crawl(self):
+        self.results = []
         while self.queue:
             self.check(self.queue.pop(0))
         return self.success
@@ -44,6 +45,12 @@ class Crawler(object):
         If status is OK, run a scan if content type is html.
         """
         response = self.client.get(url, follow=True)
+        if self.return_results:
+            if self.return_response:
+                result = (url, response.status_code)
+            else:
+                result = (url, response.status_code, response)
+            self.results.append(result)
         self.ignore.append(url)
         # check if we're a 200
         if response.status_code != 200:
