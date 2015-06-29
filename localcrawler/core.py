@@ -47,9 +47,9 @@ class Crawler(object):
         response = self.client.get(url, follow=True)
         if self.return_results:
             if self.return_response:
-                result = (url, response.status_code)
-            else:
                 result = (url, response.status_code, response)
+            else:
+                result = (url, response.status_code)
             self.results.append(result)
         self.ignore.append(url)
         # check if we're a 200
