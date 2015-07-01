@@ -1,3 +1,4 @@
+from urlparse import urlparse
 from BeautifulSoup import BeautifulSoup
 from django.conf import settings
 from django.test.client import Client
@@ -98,8 +99,14 @@ class Crawler(object):
                 self.queue.append(href)
         
     def _relevant(self, url):
+        
+        if not url:
+            return False
+        
+        url_parts = urlparse(url)
+        
         conditions = [
-            url,
+            url_parts.netloc == '',
             url.startswith('/'),
             not url in self.ignore,
         ]
