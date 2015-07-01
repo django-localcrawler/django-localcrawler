@@ -18,7 +18,7 @@ class Crawler(object):
         self.queue = [entry_point]
         self.ignore = ignore or []
         self.img = img
-        self.media = img  # Deprecated. Use img
+        self.media = media  # Deprecated. Use img
         self.media_dir = media_dir
         self.static_dir = static_dir
         self.css = css
@@ -78,6 +78,8 @@ class Crawler(object):
                 self.success = False
                 self.report("SOUP", url, unicode(e))
             return
+        # media is deprecated but currently setting either media or
+        # img to False will disable checking of images
         if self.img and self.media:
             for img in soup.findAll('img'):
                 src = img.get('src', '')
