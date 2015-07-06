@@ -14,9 +14,11 @@ class Crawler(object):
                  return_results=False, return_response=False,
                  output=sys.stderr):
         
-        self.results = None
-        self.queue = [entry_point]
-        self.ignore = ignore or []
+        self.queue = []
+        self.results = []
+        self.ignore = set(ignore) or set()
+
+        self._add_to_queue(entry_point)
         self.img = img
         self.media = media  # Deprecated. Use img
         self.media_dir = media_dir
@@ -34,7 +36,6 @@ class Crawler(object):
         self.succeeded = 0
         
     def crawl(self):
-        self.results = []
         while self.queue:
             self.check(self.queue.pop(0))
         return self.success
@@ -45,14 +46,18 @@ class Crawler(object):
         
         If status is OK, run a scan if content type is html.
         """
+        
         response = self.client.get(url, follow=True)
+        
+        # Add checked url to the results list
+        # If return_response is set then also store the whole response
         if self.return_results:
             if self.return_response:
                 result = (url, response.status_code, response)
             else:
                 result = (url, response.status_code)
             self.results.append(result)
-        self.ignore.append(url)
+        
         # check if we're a 200
         if response.status_code != 200:
             self.success = False
@@ -78,42 +83,55 @@ class Crawler(object):
                 self.success = False
                 self.report("SOUP", url, unicode(e))
             return
+        
         # media is deprecated but currently setting either media or
         # img to False will disable checking of images
         if self.img and self.media:
-            for img in soup.findAll('img'):
-                src = img.get('src', '')
-                if self._relevant(src):
-                    self.queue.append(src)
+            self._parse_and_queue_if_valid(
+                tags=soup.findAll('img'),
+                attr='src',
+            )
+            
         if self.js:
-            for js in soup.findAll('script', attrs={'type': 'text/javascript'}):
-                src = js.get('src', '')
-                if self._relevant(src):
-                    self.queue.append(src)
+            self._parse_and_queue_if_valid(
+                tags=soup.findAll('script',attrs={'type': 'text/javascript'}),
+                attr='src',
+            )
+            
         if self.css:
-            for css in soup.findAll('link', attrs={'type': 'text/css'}):
-                href = css.get('href', '')
-                if self._relevant(href):
-                    self.queue.append(href)
-        for a in soup.findAll('a'):
-            href = a.get('href', '')
-            if self._relevant(href):
-                self.queue.append(href)
+            self._parse_and_queue_if_valid(
+                tags=soup.findAll('link', attrs={'type': 'text/css'}),
+                attr='href',
+            )
+            
+        self._parse_and_queue_if_valid(
+            tags=soup.findAll('a'),
+            attr='href',
+        )
         
-    def _relevant(self, url):
+    def _add_to_queue(self, url):
+        self.queue.append(url)
+        # Add the url to the ignore list so we don't add it again
+        self.ignore.add(url)
+    
+    def _parse_and_queue_if_valid(self, tags, attr):
         
-        if not url:
-            return False
-        
-        url_parts = urlparse(url)
-        
-        conditions = [
-            url_parts.netloc == '',
-            url.startswith('/'),
-            not url in self.ignore,
-        ]
-        if not self.media_dir:
-            conditions.append(not url.startswith(settings.MEDIA_URL))
-        if not self.static_dir:
-            conditions.append(not url.startswith(settings.STATIC_URL))
-        return all(conditions)
+        for tag in tags:
+            
+            url = tag.get(attr, '')
+            url_parts = urlparse(url)
+            
+            valid = (
+                url and
+                url_parts.netloc == '' and
+                url.startswith('/') and
+                url not in self.ignore
+            )
+            if not self.media_dir and url.startswith(settings.MEDIA_URL):
+                valid = False
+            if not self.static_dir and url.startswith(settings.STATIC_URL):
+                valid = False
+            
+            if valid:
+                self._add_to_queue(url)
+
