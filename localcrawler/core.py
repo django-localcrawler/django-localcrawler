@@ -16,6 +16,7 @@ class Crawler(object):
         
         self.queue = []
         self.results = []
+        ignore = ignore or []
         self.ignore = set(ignore) or set()
 
         self._add_to_queue(entry_point)
