@@ -17,7 +17,7 @@ class Command(BaseCommand):
         print "--------------------------"
         print ""
         print "Entry Point: %s" % crawler.entry_point
-        print "Duration:    %.1fs"  % duration
+        print "Duration:    %.1fs" % duration
         print "Crawled:     %s" % crawler.crawled
         print "Succeeded:   %s" % crawler.succeeded
         print "Failed:      %s" % crawler.failed
