@@ -19,6 +19,7 @@ class Crawler(object):
         ignore = ignore or []
         self.ignore = set(ignore) or set()
 
+        self.entry_point = entry_point
         self._add_to_queue(entry_point)
         self.img = img
         self.media = media  # Deprecated. Use img
@@ -58,6 +59,8 @@ class Crawler(object):
             else:
                 result = (url, response.status_code)
             self.results.append(result)
+            
+        self.crawled += 1
         
         # check if we're a 200
         if response.status_code != 200:
@@ -65,7 +68,11 @@ class Crawler(object):
             self.report(response.status_code, url, "URL Failed")
             return
         self.succeeded += 1
-        html = response.content
+        if hasattr(response, 'render'):
+            response.render()
+        html = getattr(response, 'content', None)
+        if html is None:
+            html = getattr(response, 'streaming_content', '')
         if response.get('Content-Type', '').startswith('text/html'):
             self.scan(html, url)
             
